@@ -7,6 +7,11 @@ datasource db {
     provider = "postgresql"
 }
 
+enum Role {
+    USER
+    ADMIN
+}
+
 model User {
     id           String         @id @default(uuid())
     email        String         @unique
@@ -14,15 +19,16 @@ model User {
     createdAt    DateTime       @default(now())
     updatedAt    DateTime       @updatedAt
     refreshToken RefreshToken[]
+    role         Role           @default(USER)
 }
 
 model RefreshToken {
     id               String   @id @default(uuid())
     tokenRefreshHash String   @unique
-    userId    String
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    createdAt DateTime @default(now())
-    expiresAt DateTime
+    userId           String
+    user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    createdAt        DateTime @default(now())
+    expiresAt        DateTime
 
     @@index([userId])
 }

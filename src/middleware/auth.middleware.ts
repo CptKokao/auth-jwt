@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { ApiError } from "../utils/api-error";
-import { AccessTokenPayload, verifyAccessToken } from "../utils/jwt";
+import { AccessTokenPayload, Role, verifyAccessToken } from "../utils/jwt";
 
 declare global {
   namespace Express {
@@ -25,4 +25,16 @@ export function authenticate(req: Request, _res: Response, next: NextFunction) {
   } catch {
     next(new ApiError(401, "Invalid or expired access token"));
   }
+}
+
+export function requireRole(...roles: Role[]) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    const role = req.user?.role;
+
+    if (!role || !roles.includes(role)) {
+      return next(new ApiError(403, "Недостаточно прав"));
+    }
+
+    next();
+  };
 }

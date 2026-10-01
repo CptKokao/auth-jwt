@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate } from "./middleware/auth.middleware";
+import { authenticate, requireRole } from "./middleware/auth.middleware";
 import { loginSchema, signupSchema } from "./auth.schemas";
 import * as authController from "./auth.controller";
 import { validate } from "./middleware/validate.middleware";
@@ -11,3 +11,9 @@ appRouter.post("/login", validate(loginSchema), authController.login);
 appRouter.post("/refresh", authController.refresh);
 appRouter.post("/logout", authController.logout);
 appRouter.get("/me", authenticate, authController.me);
+appRouter.get(
+  "/admin",
+  authenticate,
+  requireRole("ADMIN"),
+  authController.adminUsers,
+);

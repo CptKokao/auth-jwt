@@ -1,6 +1,7 @@
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
+import { prisma } from "../src/lib/prisma";
 import { extractCookie } from "./helpers";
 
 const email = "user@example.com";
@@ -81,5 +82,43 @@ describe("Auth", () => {
       .post("/api/auth/refresh")
       .set("Cookie", cookie);
     expect(res.status).toBe(401);
+  });
+});
+
+describe("Roles", () => {
+  it("returns role USER in /me after signup", async () => {
+    const signupRes = await signup();
+    const res = await request(app)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${signupRes.body.accessToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.role).toBe("USER");
+  });
+
+  it("returns 401 on /admin without a token", async () => {
+    const res = await request(app).get("/api/auth/admin");
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 403 on /admin with a USER token", async () => {
+    const signupRes = await signup();
+    const res = await request(app)
+      .get("/api/auth/admin")
+      .set("Authorization", `Bearer ${signupRes.body.accessToken}`);
+    expect(res.status).toBe(403);
+  });
+
+  it("returns the user list on /admin with an ADMIN token", async () => {
+    await signup();
+    await prisma.user.update({ where: { email }, data: { role: "ADMIN" } });
+    const loginRes = await request(app)
+      .post("/api/auth/login")
+      .send({ email, password });
+    const res = await request(app)
+      .get("/api/auth/admin")
+      .set("Authorization", `Bearer ${loginRes.body.accessToken}`);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body[0].role).toBe("ADMIN");
   });
 });

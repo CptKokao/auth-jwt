@@ -1,9 +1,11 @@
 import crypto from "crypto";
+import { env } from "./config/env";
 import { prisma } from "./lib/prisma";
 import { ApiError } from "./utils/api-error";
 import { hashPassword, verifyPassword } from "./utils/password";
 import {
   hashToken,
+  Role,
   signAccessToken,
   signRefreshToken,
   verifyRefreshToken,
@@ -14,8 +16,22 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+const adminEmails = new Set(
+  env.ADMIN_EMAILS.split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean),
+);
+
+function getRoleForEmail(email: string): Role {
+  return adminEmails.has(email.toLowerCase()) ? "ADMIN" : "USER";
+}
+
 // Выдача токена
-async function issueTokens(userId: string, email: string): Promise<AuthTokens> {
+async function issueTokens(
+  userId: string,
+  email: string,
+  role: Role,
+): Promise<AuthTokens> {
   const jwtId = crypto.randomUUID();
   const refreshToken = signRefreshToken({ sub: userId, jwtId });
 
@@ -30,7 +46,7 @@ async function issueTokens(userId: string, email: string): Promise<AuthTokens> {
     },
   });
 
-  const accessToken = signAccessToken({ sub: userId, email });
+  const accessToken = signAccessToken({ sub: userId, email, role });
   return { accessToken, refreshToken };
 }
 
@@ -44,13 +60,14 @@ export async function signup(input: { email: string; password: string }) {
   }
 
   const passwordHash = await hashPassword(input.password);
+  const role = getRoleForEmail(input.email);
 
   const user = await prisma.user.create({
-    data: { email: input.email, passwordHash },
+    data: { email: input.email, passwordHash, role },
   });
 
   // refreshToken уходит в заголовке set-cookie
-  return issueTokens(user.id, user.email);
+  return issueTokens(user.id, user.email, user.role);
 }
 
 export async function login(input: { email: string; password: string }) {
@@ -69,7 +86,7 @@ export async function login(input: { email: string; password: string }) {
   }
 
   // refreshToken уходит в заголовке set-cookie
-  return issueTokens(user.id, user.email);
+  return issueTokens(user.id, user.email, user.role);
 }
 
 export async function refresh(refreshToken: string): Promise<AuthTokens> {
@@ -97,7 +114,7 @@ export async function refresh(refreshToken: string): Promise<AuthTokens> {
 
   // Ротация: отзываем старый, выдаём новый
   await prisma.refreshToken.delete({ where: { id: stored.id } });
-  return issueTokens(user.id, user.email);
+  return issueTokens(user.id, user.email, user.role);
 }
 
 export async function logout(refreshToken?: string): Promise<void> {
@@ -111,7 +128,7 @@ export async function logout(refreshToken?: string): Promise<void> {
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, createdAt: true },
+    select: { id: true, email: true, role: true, createdAt: true },
   });
 
   if (!user) {
@@ -119,4 +136,11 @@ export async function getMe(userId: string) {
   }
 
   return user;
+}
+
+export async function listUsers() {
+  return prisma.user.findMany({
+    select: { id: true, email: true, role: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
 }

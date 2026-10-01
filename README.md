@@ -94,6 +94,7 @@ sequenceDiagram
 | POST  | `/api/auth/refresh` | Обновление пары по refresh-токену (ротация)                            |
 | POST  | `/api/auth/logout`  | Отзыв refresh-токена                                                   |
 | GET   | `/api/auth/me`      | Текущий пользователь (заголовок `Authorization: Bearer <accessToken>`) |
+| GET   | `/api/auth/admin`   | Список пользователей (только `ADMIN`)                                  |
 | GET   | `/health`           | Health-check                                                           |
 
 Refresh-токен передаётся в httpOnly-куке `refreshToken`, access-токен — в теле ответа.
@@ -106,4 +107,4 @@ Refresh-токен передаётся в httpOnly-куке `refreshToken`, acc
 
 ## Переменные окружения
 
-См. `.env.example`. Секреты (`ACCESS_TOKEN_SECRET`, `REFRESH_TOKEN_SECRET`) — минимум 16 символов.
+См. `.env.example`. Секреты (`ACCESS_TOKEN_SECRET`, `REFRESH_TOKEN_SECRET`) — минимум 16 символов. `ADMIN_EMAILS` — список email через запятую, которым при регистрации назначается роль `ADMIN` (по умолчанию пусто).

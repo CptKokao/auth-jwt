@@ -2,9 +2,12 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env";
 
+export type Role = "USER" | "ADMIN";
+
 export interface AccessTokenPayload {
   sub: string;
   email: string;
+  role: Role;
 }
 
 export interface RefreshTokenPayload {

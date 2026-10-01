@@ -14,6 +14,7 @@ const envSchema = z.object({
   ACCESS_TOKEN_TTL: z.string().default("15m"),
   REFRESH_TOKEN_TTL: z.string().default("7d"),
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
+  ADMIN_EMAILS: z.string().default(""),
 });
 
 const parsed = envSchema.safeParse(process.env);
