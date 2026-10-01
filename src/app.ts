@@ -2,6 +2,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
+import path from "path";
 import { env } from "./config/env";
 import { errorHandler, notFoundHandler } from "./middleware/error.middleware";
 import { appRouter } from "./auth.routes";
@@ -12,6 +13,7 @@ app.use(helmet());
 app.use(cors({ origin: env.CORS_ORIGIN.split(","), credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(express.static(path.join(process.cwd(), "public")));
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });

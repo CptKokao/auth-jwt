@@ -14,9 +14,11 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+// Выдача токена
 async function issueTokens(userId: string, email: string): Promise<AuthTokens> {
   const jwtId = crypto.randomUUID();
   const refreshToken = signRefreshToken({ sub: userId, jwtId });
+
   // Декодирует только что подписанный JWT и возвращает payload, из которого берётся стандартное поле exp — время истечения токена в секундах Unix. Его умножают на 1000 и кладут в expiresAt строки БД.
   const decoded = verifyRefreshToken(refreshToken);
 
@@ -71,7 +73,8 @@ export async function login(input: { email: string; password: string }) {
 }
 
 export async function refresh(refreshToken: string): Promise<AuthTokens> {
-  let payload;
+  let payload; // { sub, jwtId, exp }.
+  // декодирования токена для проверки подпись и срок действия
   try {
     payload = verifyRefreshToken(refreshToken);
   } catch {

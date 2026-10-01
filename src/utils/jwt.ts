@@ -33,6 +33,7 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload {
   return jwt.verify(token, env.REFRESH_TOKEN_SECRET) as RefreshTokenPayload;
 }
 
+// считает SHA-256 хеш переданной строки (refresh-токена) и возвращает его в hex
 export function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }

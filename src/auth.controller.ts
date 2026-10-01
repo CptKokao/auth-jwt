@@ -21,7 +21,7 @@ export async function signup(req: Request, res: Response, next: NextFunction) {
   try {
     const tokens = await authService.signup(req.body);
     setRefreshCookie(res, tokens.refreshToken);
-    res.status(201).json({ accessToken: tokens.accessToken });
+    res.status(201).json({ access: tokens.accessToken });
   } catch (e) {
     next(e);
   }
@@ -31,7 +31,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const tokens = await authService.login(req.body);
     setRefreshCookie(res, tokens.refreshToken);
-    res.status(200).json({ accessToken: tokens.accessToken });
+    res.status(200).json({ access: tokens.accessToken });
   } catch (e) {
     next(e);
   }
@@ -47,7 +47,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction) {
 
     const tokens = await authService.refresh(oldToken);
     setRefreshCookie(res, tokens.refreshToken);
-    res.json({ accessToken: tokens.accessToken });
+    res.json({ access: tokens.accessToken });
   } catch (e) {
     next(e);
   }
