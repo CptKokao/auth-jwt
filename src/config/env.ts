@@ -15,6 +15,7 @@ const envSchema = z.object({
   REFRESH_TOKEN_TTL: z.string().default("7d"),
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
   ADMIN_EMAILS: z.string().default(""),
+  TRUST_PROXY: z.coerce.number().int().min(0).default(0),
 });
 
 const parsed = envSchema.safeParse(process.env);

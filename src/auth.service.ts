@@ -15,6 +15,8 @@ export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000;
 
 const adminEmails = new Set(
   env.ADMIN_EMAILS.split(",")
@@ -79,10 +81,44 @@ export async function login(input: { email: string; password: string }) {
     throw new ApiError(401, "Неверные учетные данные");
   }
 
+  if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+    throw new ApiError(423, "Аккаунт временно заблокирован");
+  }
+
   const isVerify = await verifyPassword(input.password, user.passwordHash);
 
   if (!isVerify) {
+    const failedAttempts = user.failedAttempts + 1;
+
+    // Блокирую пользователя
+    if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedAttempts: 0,
+          lockedUntil: new Date(Date.now() + LOCKOUT_MS),
+        },
+      });
+
+      throw new ApiError(
+        423,
+        "Слишком много неудачных попыток. Аккаунт заблокирован",
+      );
+    }
+
+    // Записываю попытку
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { failedAttempts },
+    });
     throw new ApiError(401, "Неверные учетные данные");
+  }
+
+  if (user.failedAttempts > 0) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { failedAttempts: 0, lockedUntil: null },
+    });
   }
 
   // refreshToken уходит в заголовке set-cookie

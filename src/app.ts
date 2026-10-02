@@ -8,6 +8,9 @@ import { errorHandler, notFoundHandler } from "./middleware/error.middleware";
 import { appRouter } from "./auth.routes";
 
 export const app = express();
+// Оно говорит Express: «доверяй заголовку X-Forwarded-For, который прокси добавляет в запрос, и бери настоящий IP клиента из него».
+// TRUST_PROXY - количество хопов от прокси
+app.set("trust proxy", env.TRUST_PROXY);
 
 app.use(helmet());
 app.use(cors({ origin: env.CORS_ORIGIN.split(","), credentials: true }));
